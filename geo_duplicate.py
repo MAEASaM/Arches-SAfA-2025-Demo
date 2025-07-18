@@ -1,35 +1,163 @@
 import pandas as pd
 import json
 
+resource_id_col = "MAEASaM ID"
 
-def get_same_card_nodes(resource_model_file):
+
+def get_same_card_nodes(node_name, resource_model_file):
     """
     Find nodes that have the same card ID and are of geojson-feature-collection datatype.
 
     Args:
+        node_name (str): Name of the node to find the group for
         resource_model_file (str): Path to the resource model JSON file
 
     Returns:
-        dict: Dictionary mapping card IDs to lists of node IDs with geojson-feature-collection datatype
+        list: List of node names that belong to the same card/group
     """
     with open(resource_model_file, "r") as f:
         resource_model = json.load(f)
 
     # Dictionary to store card_id -> list of node_ids with geojson-feature-collection
-    card_nodes = {}
+    node_names = []
 
-    # Find all nodes in the resource model
+    # Find group node id for the given node
+    nodegroup_id = None
+    for graph in resource_model.get("graph", []):
+        for node in graph.get("nodes", []):
+            if node.get("name") == node_name:
+                nodegroup_id = node.get("nodegroup_id")
+                break
+        if nodegroup_id:
+            break
+
+    if not nodegroup_id:
+        return node_names
+
+    # find node names from the same group
+    for graph in resource_model.get("graph", []):
+        for node in graph.get("nodes", []):
+            if node.get("nodegroup_id") == nodegroup_id:
+                node_names.append(node.get("name"))
+
+    return node_names
+
+
+def modify_card_data(node_names, df):
+    """
+    Modify the card data for the given node names.
+
+    Args:
+        node_names (list): List of node names in the same card/group
+        df (pd.DataFrame): DataFrame containing the data
+
+    Returns:
+        pd.DataFrame: Modified DataFrame
+    """
+    if len(df) == 1:
+        return df
+
+    # Create a copy to avoid modifying the original
+    modified_df = df.copy()
+
+    # Group by resource ID to process each group separately
+    for resource_id, group in modified_df.groupby("MAEASaM ID"):
+        if len(group) > 1:
+            # Get the first row as reference
+            first_row = group.iloc[0]
+
+            # Update other rows in the group
+            for idx in group.index[1:]:  # Skip the first row
+                for node_name in node_names:
+                    if node_name in modified_df.columns:
+                        if (
+                            pd.isna(modified_df.at[idx, node_name])
+                            or modified_df.at[idx, node_name] == ""
+                        ):
+                            modified_df.at[idx, node_name] = first_row[node_name]
+
+    return modified_df
+
+
+def get_geometry_node_names(resource_model_file):
+    """
+    Get all node names that have geojson-feature-collection datatype.
+
+    Args:
+        resource_model_file (str): Path to the resource model JSON file
+
+    Returns:
+        list: List of node names with geojson-feature-collection datatype
+    """
+    with open(resource_model_file, "r") as f:
+        resource_model = json.load(f)
+
+    geo_node_names = []
     for graph in resource_model.get("graph", []):
         for node in graph.get("nodes", []):
             if node.get("datatype") == "geojson-feature-collection":
-                nodegroup_id = node.get("nodegroup_id")
-                node_id = node.get("nodeid")
+                geo_node_names.append(node.get("name"))
 
-                if nodegroup_id not in card_nodes:
-                    card_nodes[nodegroup_id] = []
-                card_nodes[nodegroup_id].append(node_id)
+    return geo_node_names
 
-    return card_nodes
+
+def process_geometry_duplicates(df, resource_model_file):
+    """
+    Process geometry duplicates in the DataFrame.
+
+    Args:
+        df (pd.DataFrame): DataFrame to process
+        resource_model_file (str): Path to the resource model JSON file
+
+    Returns:
+        pd.DataFrame: Processed DataFrame
+    """
+    geo_node_names = get_geometry_node_names(resource_model_file)
+
+    # Create a copy to avoid modifying the original
+    processed_df = df.copy()
+
+    # Group by resource ID to check for duplicates
+    for resource_id, group in processed_df.groupby("MAEASaM ID"):
+        if len(group) > 1:
+            # Check if any geometry columns have multiple non-empty values
+            geometry_has_multiple = False
+            for node_name in geo_node_names:
+                if node_name in processed_df.columns:
+                    non_empty_geometries = group[node_name].dropna()
+                    if len(non_empty_geometries) > 1:
+                        geometry_has_multiple = True
+                        break
+
+            if geometry_has_multiple:
+                # Copy data from first row to other rows
+                first_row = group.iloc[0]
+                for idx in group.index[1:]:  # Skip the first row
+                    for col in processed_df.columns:
+                        if col not in geo_node_names:  # Only copy non-geometry columns
+                            current_value = processed_df.at[idx, col]
+                            first_value = first_row[col]
+                            if pd.isna(current_value) or current_value == "":
+                                processed_df.at[idx, col] = first_value
+
+    return processed_df
+
+
+def validate_input_data(df):
+    """
+    Validate that the input DataFrame has the required columns.
+
+    Args:
+        df (pd.DataFrame): DataFrame to validate
+
+    Returns:
+        bool: True if valid, False otherwise
+    """
+    if resource_id_col not in df.columns:
+        print(f"Warning: Resource ID column '{resource_id_col}' not found in CSV")
+        print(f"Available columns: {list(df.columns)}")
+        return False
+    return True
 
 
 def geo_duplicate(data_csv_file, output_cleaned_file, resource_model_file):
@@ -44,86 +172,14 @@ def geo_duplicate(data_csv_file, output_cleaned_file, resource_model_file):
     # Read the CSV file
     df = pd.read_csv(data_csv_file)
 
-    # Get nodes with geojson-feature-collection datatype grouped by card ID
-    card_nodes = get_same_card_nodes(resource_model_file)
-
-    # Load resource model to get node information
-    with open(resource_model_file, "r") as f:
-        resource_model = json.load(f)
-
-    # Find geometry columns based on datatype, not column name
-    geometry_columns = []
-    node_to_fieldname = {}
-
-    # Extract node information from resource model
-    for graph in resource_model.get("graph", []):
-        for node in graph.get("nodes", []):
-            if node.get("datatype") == "geojson-feature-collection":
-                node_id = node.get("nodeid")
-                fieldname = node.get("fieldname")
-                if fieldname and fieldname in df.columns:
-                    geometry_columns.append(fieldname)
-                    node_to_fieldname[node_id] = fieldname
-
-    print(f"Found geometry columns based on datatype: {geometry_columns}")
-
-    # Group by resource ID to find rows with the same resource
-    resource_id_col = "MAEASaM ID"  # Assuming this is the resource ID column
-
-    if resource_id_col not in df.columns:
-        print(f"Warning: Resource ID column '{resource_id_col}' not found in CSV")
-        print(f"Available columns: {list(df.columns)}")
+    # Validate input data
+    if not validate_input_data(df):
         # Write the original data without processing
         df.to_csv(output_cleaned_file, index=False)
         return
 
-    # Group by resource ID
-    grouped = df.groupby(resource_id_col)
-
-    processed_rows = []
-
-    for resource_id, group in grouped:
-        if len(group) == 1:
-            # Single row for this resource, no processing needed
-            processed_rows.append(group.iloc[0])
-        else:
-            # Multiple rows for this resource, need to check for geometry duplicates
-            print(f"Processing resource {resource_id} with {len(group)} rows")
-
-            # Check if any of the geometry columns have multiple non-empty values
-            geometry_has_multiple = False
-            for geom_col in geometry_columns:
-                non_empty_geometries = group[geom_col].dropna()
-                if len(non_empty_geometries) > 1:
-                    geometry_has_multiple = True
-                    print(f"  Found multiple geometries in column {geom_col}")
-                    break
-
-            if geometry_has_multiple:
-                # Copy values from the first row to other rows where geometry columns are empty
-                first_row = group.iloc[0]
-
-                for idx, row in group.iterrows():
-                    new_row = row.copy()
-
-                    # For rows after the first one, copy non-geometry values from the first row
-                    if idx != group.index[0]:
-                        for col in df.columns:
-                            if (
-                                col not in geometry_columns
-                                and pd.isna(new_row[col])
-                                and not pd.isna(first_row[col])
-                            ):
-                                new_row[col] = first_row[col]
-
-                    processed_rows.append(new_row)
-            else:
-                # No geometry duplicates, keep all rows as is
-                for idx, row in group.iterrows():
-                    processed_rows.append(row)
-
-    # Create new DataFrame with processed rows
-    processed_df = pd.DataFrame(processed_rows)
+    # Process geometry duplicates
+    processed_df = process_geometry_duplicates(df, resource_model_file)
 
     # Write to output file
     processed_df.to_csv(output_cleaned_file, index=False)

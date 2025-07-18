@@ -2,7 +2,13 @@ import pandas as pd
 import json
 import tempfile
 import os
-from geo_duplicate import get_same_card_nodes, geo_duplicate
+from geo_duplicate import (
+    get_same_card_nodes,
+    geo_duplicate,
+    get_geometry_node_names,
+    modify_card_data,
+    validate_input_data,
+)
 
 
 def create_test_resource_model():
@@ -92,16 +98,96 @@ def test_get_same_card_nodes():
 
     try:
         # Test the function
-        result = get_same_card_nodes(temp_file)
+        result = get_same_card_nodes("Site element geometry", temp_file)
 
-        # Expected result: card1 should have 2 nodes, card3 should have 1 node
-        expected = {"card1": ["node1", "node2"], "card3": ["node4"]}
+        # Expected result: should return all nodes from card1
+        expected = ["Site element geometry", "Legal boundary"]
 
         assert result == expected, f"Expected {expected}, got {result}"
         print("✅ get_same_card_nodes test passed!")
 
     finally:
         os.unlink(temp_file)
+
+
+def test_get_geometry_node_names():
+    """Test the get_geometry_node_names function."""
+    print("Testing get_geometry_node_names...")
+
+    # Create test resource model
+    resource_model = create_test_resource_model()
+
+    # Write to temporary file
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(resource_model, f)
+        temp_file = f.name
+
+    try:
+        # Test the function
+        result = get_geometry_node_names(temp_file)
+
+        # Expected result: should return all nodes with geojson-feature-collection datatype
+        expected = ["Site element geometry", "Legal boundary", "Another geometry"]
+
+        assert result == expected, f"Expected {expected}, got {result}"
+        print("✅ get_geometry_node_names test passed!")
+
+    finally:
+        os.unlink(temp_file)
+
+
+def test_modify_card_data():
+    """Test the modify_card_data function."""
+    print("Testing modify_card_data...")
+
+    # Create test data
+    test_df = pd.DataFrame(
+        {
+            "MAEASaM ID": ["SITE-001", "SITE-001", "SITE-002"],
+            "Site name": ["Test Site 1", None, "Test Site 2"],
+            "Site description": ["Description 1", None, "Description 2"],
+        }
+    )
+
+    node_names = ["Site name", "Site description"]
+
+    # Test the function
+    result_df = modify_card_data(node_names, test_df)
+
+    # Check that empty values were filled from the first row
+    site_001_rows = result_df[result_df["MAEASaM ID"] == "SITE-001"]
+
+    for idx, row in site_001_rows.iterrows():
+        if idx != site_001_rows.index[0]:  # Not the first row
+            assert row["Site name"] == "Test Site 1", (
+                f"Expected 'Test Site 1', got '{row['Site name']}'"
+            )
+            assert row["Site description"] == "Description 1", (
+                f"Expected 'Description 1', got '{row['Site description']}'"
+            )
+
+    print("✅ modify_card_data test passed!")
+
+
+def test_validate_input_data():
+    """Test the validate_input_data function."""
+    print("Testing validate_input_data...")
+
+    # Test with valid data
+    valid_df = pd.DataFrame(
+        {"MAEASaM ID": ["SITE-001", "SITE-002"], "Site name": ["Site 1", "Site 2"]}
+    )
+
+    assert validate_input_data(valid_df) == True, "Should return True for valid data"
+
+    # Test with invalid data (missing MAEASaM ID)
+    invalid_df = pd.DataFrame({"Site name": ["Site 1", "Site 2"]})
+
+    assert validate_input_data(invalid_df) == False, (
+        "Should return False for invalid data"
+    )
+
+    print("✅ validate_input_data test passed!")
 
 
 def test_geo_duplicate_basic():
@@ -268,6 +354,9 @@ def run_all_tests():
 
     try:
         test_get_same_card_nodes()
+        test_get_geometry_node_names()
+        test_modify_card_data()
+        test_validate_input_data()
         test_geo_duplicate_basic()
         test_geo_duplicate_no_duplicates()
         test_geo_duplicate_missing_resource_id()
