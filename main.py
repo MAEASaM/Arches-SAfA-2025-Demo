@@ -39,7 +39,7 @@ class CSV_cleaning_script:
         pass
 
     def read_input_csv(self) -> pd.DataFrame:
-        with open(input_csv_file, 'r') as input_csv_file_object:
+        with open(input_csv_file, "r") as input_csv_file_object:
             input_csv_file_object_reader = csv.DictReader(input_csv_file_object)
             write_output_csv(input_csv_file_object_reader)
             # return input_csv_file_object_reader
@@ -76,7 +76,7 @@ def write_output_csv(file_reader: csv.DictReader) -> None:
 
         if not missing_resource_id:
             fieldnames = ["ResourceID"] + fieldnames
-        
+
         # Add new copyright/access fields to output if they don't exist
         if "Access Level" not in fieldnames:
             fieldnames.append("Access Level")
@@ -89,7 +89,9 @@ def write_output_csv(file_reader: csv.DictReader) -> None:
         for row in file_reader:
             if not missing_resource_id:
                 row["ResourceID"] = row["MAEASaM ID"]
-                row["Geometry type"] = row["Geometry type"]  # This is just a fix for my csv. We will have to change it to do this only if a WKT coloum is pressent
+                row["Geometry type"] = row[
+                    "Geometry type"
+                ]  # This is just a fix for my csv. We will have to change it to do this only if a WKT coloum is pressent
 
             row = data_filter(row)
             row = date_format_all_coloums(row)
@@ -129,7 +131,7 @@ def data_filter(row: dict) -> dict:
             row["Evidence"] = "Terrace"
         if row["Evidence"] == "Soil discoloration":
             row["Evidence"] = "Discolouration"
-    
+
     # Image type field filters
     if "Image type" in row:
         if row["Image type"] == "CNES / Airbus":
@@ -138,7 +140,7 @@ def data_filter(row: dict) -> dict:
             row["Image type"] = "CNES Airbus"
         if row["Image type"] == "Bung":
             row["Image type"] = "Bing"
-    
+
     # Climatic zone field filters
     if "Climatic zone" in row:
         if row["Climatic zone"] == "Dry Winter-Hot Summer (t)":
@@ -151,21 +153,21 @@ def data_filter(row: dict) -> dict:
             row["Climatic zone"] = "Temperate Dry Winter Hot summer"
         if row["Climatic zone"] == "Bsh":
             row["Climatic zone"] = "Steppe Hot"
-    
+
     # Surveyor name field filters
     if "Surveyor name" in row:
         if row["Surveyor name"] == "Ed Burnett":
             row["Surveyor name"] = "Ed Burnett, Edward Burnett"
         if row["Surveyor name"] == "Renier van der Merwe":
             row["Surveyor name"] = "Renier Hendrik van der Merwe"
-    
+
     # Threat assessor name field filters
     if "Threat assessor name" in row:
         if row["Threat assessor name"] == "Ed Burnett":
             row["Threat assessor name"] = "Ed Burnett, Edward Burnett"
         if row["Threat assessor name"] == "Renier van der Merwe":
             row["Threat assessor name"] = "Renier Hendrik van der Merwe"
-    
+
     # Measurement unit field filters
     if "Measurement unit" in row:
         if row["Measurement unit"] == "m2":
@@ -178,24 +180,24 @@ def data_filter(row: dict) -> dict:
             row["Measurement unit"] = "Meter"
         if row["Measurement unit"] == "Hectares":
             row["Measurement unit"] = "Hectare"
-    
+
     # Measurement type field filters
     if "Measurement type" in row:
         if row["Measurement type"] == "Perimiter":
             row["Measurement type"] = "Area"
-    
+
     # Additional information field filters
     if "Additional information" in row:
         if row["Additional information"] == "M":
             row["Additional information"] = ""
-    
+
     # Survey type field filters
     if "Survey type" in row:
         if row["Survey type"] == "Historic maps check":
             row["Survey type"] = "Historic map check"
         if row["Survey type"] == "Topographic":
             row["Survey type"] = "Topographic other"
-    
+
     # Threat type field filters
     if "Threat type" in row:
         if row["Threat type"] == "Conflict":
@@ -216,17 +218,17 @@ def data_filter(row: dict) -> dict:
             row["Threat type"] = "Agriculture"
         if row["Threat type"] == "Development":
             row["Threat type"] = "Urbanisation"
-    
+
     # Evidence shape field filters
     if "Evidence shape" in row:
         if row["Evidence shape"] == "Ring":
             row["Evidence shape"] = "Circular"
-    
+
     # Ground truthed field filters
     if "Ground truthed" in row:
         if row["Ground truthed"] == "#REF!":
             row["Ground truthed"] = "No"
-    
+
     # Land use land cover field filters
     if "Land use land cover" in row:
         if row["Land use land cover"] == "Built-up":
@@ -243,7 +245,7 @@ def data_filter(row: dict) -> dict:
             row["Land use land cover"] = "Bare rock or soil"
         if row["Land use land cover"] == "Bare":
             row["Land use land cover"] = "Bare rock or soil"
-    
+
     return row
 
 
@@ -262,21 +264,25 @@ def date_format_all_coloums(row: dict) -> dict:
     # Format date fields if they exist
     if "Survey date" in row:
         row["Survey date"] = convert_date_format(row["Survey date"])
-    
+
     if "Date of imagery" in row:
         row["Date of imagery"] = convert_date_format(row["Date of imagery"])
         if "Survey date" in row:
-            row["Date of imagery"] = row["Date of imagery"].replace("20XX", row["Survey date"])
+            row["Date of imagery"] = row["Date of imagery"].replace(
+                "20XX", row["Survey date"]
+            )
             row["Date of imagery"] = row["Date of imagery"].replace(
                 "1900-01-00", row["Survey date"]
             )
-    
+
     if "Threat assessment date" in row:
-        row["Threat assessment date"] = convert_date_format(row["Threat assessment date"])
-    
+        row["Threat assessment date"] = convert_date_format(
+            row["Threat assessment date"]
+        )
+
     if "Image used date" in row:
         row["Image used date"] = convert_date_format(row["Image used date"])
-    
+
     return row
 
 
@@ -284,11 +290,11 @@ def actor_uuid_format(row: dict, actor_uuid_dict) -> dict:
     # List of actor fields that need UUID formatting
     actor_fields = [
         "Surveyor name",
-        "Threat assessor name", 
+        "Threat assessor name",
         "Assessor name",
-        "Site data information Reference Institution"
+        "Site data information Reference Institution",
     ]
-    
+
     # Format actor fields with UUID relationships
     for field in actor_fields:
         if field in row and row[field] and row[field] in actor_uuid_dict:
@@ -297,11 +303,11 @@ def actor_uuid_format(row: dict, actor_uuid_dict) -> dict:
                 + actor_uuid_dict[row[field]]
                 + "','ontologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P11_had_participant', 'resourceXresourceId': '','inverseOntologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P140_assigned_attribute_to'}]"
             )
-    
+
     # Add new copyright/access nodes with default values
     row["Access Level"] = "Public"
     row["Copyright Information"] = "CC BY-NC-SA"
-    
+
     return row
 
 
