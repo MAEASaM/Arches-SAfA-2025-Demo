@@ -91,7 +91,7 @@ def write_output_csv(file_reader: csv.DictReader) -> None:
                 row["ResourceID"] = row["MAEASaM ID"]
                 row["Geometry type"] = row[
                     "Geometry type"
-                ]  # This is just a fix for my csv. We will have to change it to do this only if a WKT coloum is pressent
+                ]  # This is just a fix for my csv. We will have to change it to do this only if a WKT column is present
 
             row = data_filter(row)
             row = date_format_all_coloums(row)
