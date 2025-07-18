@@ -16,24 +16,28 @@ def create_test_resource_model():
                         "nodegroup_id": "card1",
                         "datatype": "geojson-feature-collection",
                         "name": "Site element geometry",
+                        "fieldname": "Site element geometry",
                     },
                     {
                         "nodeid": "node2",
                         "nodegroup_id": "card1",
                         "datatype": "geojson-feature-collection",
                         "name": "Legal boundary",
+                        "fieldname": "Legal boundary",
                     },
                     {
                         "nodeid": "node3",
                         "nodegroup_id": "card2",
                         "datatype": "string",
                         "name": "Site name",
+                        "fieldname": "Site name",
                     },
                     {
                         "nodeid": "node4",
                         "nodegroup_id": "card3",
                         "datatype": "geojson-feature-collection",
                         "name": "Another geometry",
+                        "fieldname": "Another geometry",
                     },
                 ]
             }

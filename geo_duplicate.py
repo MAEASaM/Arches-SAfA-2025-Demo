@@ -47,23 +47,25 @@ def geo_duplicate(data_csv_file, output_cleaned_file, resource_model_file):
     # Get nodes with geojson-feature-collection datatype grouped by card ID
     card_nodes = get_same_card_nodes(resource_model_file)
 
-    # Find the column that contains the card ID (nodegroup_id)
-    # Based on the CSV structure, we need to identify which column represents the card/group
-    # For now, we'll assume there's a column that indicates the card/group relationship
+    # Load resource model to get node information
+    with open(resource_model_file, "r") as f:
+        resource_model = json.load(f)
 
-    # Group by resource ID and card ID to find duplicates
-    # We need to identify the columns that represent:
-    # 1. Resource ID (likely 'MAEASaM ID' based on the CSV)
-    # 2. Card/Group ID (we need to identify this from the CSV structure)
-    # 3. Geometry columns (columns that contain geojson-feature-collection data)
-
-    # For now, let's identify geometry columns by looking for columns that might contain geometry data
+    # Find geometry columns based on datatype, not column name
     geometry_columns = []
-    for col in df.columns:
-        if "geometry" in col.lower() or "geom" in col.lower():
-            geometry_columns.append(col)
+    node_to_fieldname = {}
 
-    print(f"Found geometry columns: {geometry_columns}")
+    # Extract node information from resource model
+    for graph in resource_model.get("graph", []):
+        for node in graph.get("nodes", []):
+            if node.get("datatype") == "geojson-feature-collection":
+                node_id = node.get("nodeid")
+                fieldname = node.get("fieldname")
+                if fieldname and fieldname in df.columns:
+                    geometry_columns.append(fieldname)
+                    node_to_fieldname[node_id] = fieldname
+
+    print(f"Found geometry columns based on datatype: {geometry_columns}")
 
     # Group by resource ID to find rows with the same resource
     resource_id_col = "MAEASaM ID"  # Assuming this is the resource ID column
