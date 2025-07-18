@@ -71,11 +71,17 @@ def write_output_csv(file_reader: csv.DictReader) -> None:
         # read actor uuid csv
         actor_uuid_dict = read_actor_uuid_csv()
 
-        fieldnames = file_reader.fieldnames
+        fieldnames = list(file_reader.fieldnames)
         missing_resource_id = check_for_resource_id_column(file_reader)
 
         if not missing_resource_id:
             fieldnames = ["ResourceID"] + fieldnames
+        
+        # Add new copyright/access fields to output if they don't exist
+        if "Access Level" not in fieldnames:
+            fieldnames.append("Access Level")
+        if "Copyright Information" not in fieldnames:
+            fieldnames.append("Copyright Information")
 
         writer = csv.DictWriter(zim_data_overwritten, fieldnames=fieldnames)
 
@@ -93,112 +99,151 @@ def write_output_csv(file_reader: csv.DictReader) -> None:
 
 
 def data_filter(row: dict) -> dict:
-    if row["Evidence"] == "Building":
-        row["Evidence"] = "Structure"
-    if row["Evidence"] == "Structures":
-        row["Evidence"] = "Structure"
-    if row["Evidence"] == "Unknown":
-        row["Evidence"] = "Standing remains"
-    if row["Evidence"] == "Enclosures":
-        row["Evidence"] = "Enclosure"
-    if row["Evidence"] == "Terracing":
-        row["Evidence"] = "Terrace"
-    if row["Evidence"] == "Wall":
-        row["Evidence"] = "Walling"
-    if row["Evidence"] == "Stone Mound":
-        row["Evidence"] = "Stone mound"
-    if row["Evidence"] == "Soil Mark":
-        row["Evidence"] = "Soil mark"
-    if row["Evidence"] == "Complex Enclosure":
-        row["Evidence"] = "Complex enclosure"
-    if row["Evidence"] == "Complex enclosures":
-        row["Evidence"] = "Complex enclosure"
-    if row["Evidence"] == "Stone Circle":
-        row["Evidence"] = "Stone circle"
-    if row["Evidence"] == "Complex Structure":
-        row["Evidence"] = "Complex structure"
-    if row["Evidence"] == "Earth":
-        row["Evidence"] = "Terrace"
-    if row["Evidence"] == "Soil discoloration":
-        row["Evidence"] = "Discolouration"
-    if row["Image type"] == "CNES / Airbus":
-        row["Image type"] = "CNES Airbus"
-    if row["Image type"] == "CNES/Airbus":
-        row["Image type"] = "CNES Airbus"
-    if row["Image type"] == "Bung":
-        row["Image type"] = "Bing"
-    if row["Climatic zone"] == "Dry Winter-Hot Summer (t)":
-        row["Climatic zone"] = "Temperate Dry Winter Hot summer"
-    if row["Climatic zone"] == "Dry Winter-Warm Summer (t)":
-        row["Climatic zone"] = "Temperate Dry Winter Warm summer"
-    if row["Climatic zone"] == "Cwb":
-        row["Climatic zone"] = "Temperate Dry Winter Warm summer"
-    if row["Climatic zone"] == "Cwa":
-        row["Climatic zone"] = "Temperate Dry Winter Hot summer"
-    if row["Climatic zone"] == "Bsh":
-        row["Climatic zone"] = "Steppe Hot"
-    if row["Surveyor name"] == "Ed Burnett":
-        row["Surveyor name"] = "Ed Burnett, Edward Burnett"
-    if row["Surveyor name"] == "Renier van der Merwe":
-        row["Surveyor name"] = "Renier Hendrik van der Merwe"
-    if row["Threat assessor name"] == "Ed Burnett":
-        row["Threat assessor name"] = "Ed Burnett, Edward Burnett"
-    if row["Threat assessor name"] == "Renier van der Merwe":
-        row["Threat assessor name"] = "Renier Hendrik van der Merwe"
-    if row["Measurement unit"] == "m2":
-        row["Measurement unit"] = "square meter"
-    if row["Measurement unit"] == "Square Meter":
-        row["Measurement unit"] = "square meter"
-    if row["Measurement unit"] == "m":
-        row["Measurement unit"] = "Meter"
-    if row["Measurement unit"] == "meter":
-        row["Measurement unit"] = "Meter"
-    if row["Measurement unit"] == "Hectares":
-        row["Measurement unit"] = "Hectare"
-    if row["Measurement type"] == "Perimiter":
-        row["Measurement type"] = "Area"
-    if row["Additional information"] == "M":
-        row["Additional information"] = ""
-    if row["Survey type"] == "Historic maps check":
-        row["Survey type"] = "Historic map check"
-    if row["Survey type"] == "Topographic":
-        row["Survey type"] = "Topographic other"
-    if row["Threat type"] == "Conflict":
-        row["Threat type"] = "War"
-    if row["Threat type"] == "Occupation expansion":
-        row["Threat type"] = "Urbanisation"
-    if row["Threat type"] == "Environmental":
-        row["Threat type"] = "Episodic events"
-    if row["Threat type"] == "Environmental ":
-        row["Threat type"] = "Episodic events"
-    if row["Threat type"] == "Anthopogenic":
-        row["Threat type"] = "Agriculture"
-    if row["Threat type"] == "Anthropogenic":
-        row["Threat type"] = "Agriculture"
-    if row["Threat type"] == "Antrhopgenic":
-        row["Threat type"] = "Agriculture"
-    if row["Threat type"] == "Antrhopogenic":
-        row["Threat type"] = "Agriculture"
-    if row["Threat type"] == "Development":
-        row["Threat type"] = "Urbanisation"
-    if row["Evidence shape"] == "Ring":
-        row["Evidence shape"] = "Circular"
-    if row["Ground truthed"] == "#REF!":
-        row["Ground truthed"] = "No"
-    if row["Land use land cover"] == "Built-up":
-        row["Land use land cover"] = "Built up"
-    if row["Land use land cover"] == "grassland":
-        row["Land use land cover"] = "Grassland"
-    if row["Land use land cover"] == "Cropland":
-        row["Land use land cover"] = "Cultivated"
-    if row["Land use land cover"] == "Tree Cover":
-        row["Land use land cover"] = "Thicket"
-    if row["Land use land cover"] == "Shurbland":
-        row["Land use land cover"] = "Scrub"
-    if row["Land use land cover"] == "Bare rock or Soil discoloration":
-        row["Land use land cover"] = "Bare rock or soil"
-    if row["Land use land cover"] == "Bare":
-        row["Land use land cover"] = "Bare rock or soil"
+    # Evidence field filters
+    if "Evidence" in row:
+        if row["Evidence"] == "Building":
+            row["Evidence"] = "Structure"
+        if row["Evidence"] == "Structures":
+            row["Evidence"] = "Structure"
+        if row["Evidence"] == "Unknown":
+            row["Evidence"] = "Standing remains"
+        if row["Evidence"] == "Enclosures":
+            row["Evidence"] = "Enclosure"
+        if row["Evidence"] == "Terracing":
+            row["Evidence"] = "Terrace"
+        if row["Evidence"] == "Wall":
+            row["Evidence"] = "Walling"
+        if row["Evidence"] == "Stone Mound":
+            row["Evidence"] = "Stone mound"
+        if row["Evidence"] == "Soil Mark":
+            row["Evidence"] = "Soil mark"
+        if row["Evidence"] == "Complex Enclosure":
+            row["Evidence"] = "Complex enclosure"
+        if row["Evidence"] == "Complex enclosures":
+            row["Evidence"] = "Complex enclosure"
+        if row["Evidence"] == "Stone Circle":
+            row["Evidence"] = "Stone circle"
+        if row["Evidence"] == "Complex Structure":
+            row["Evidence"] = "Complex structure"
+        if row["Evidence"] == "Earth":
+            row["Evidence"] = "Terrace"
+        if row["Evidence"] == "Soil discoloration":
+            row["Evidence"] = "Discolouration"
+    
+    # Image type field filters
+    if "Image type" in row:
+        if row["Image type"] == "CNES / Airbus":
+            row["Image type"] = "CNES Airbus"
+        if row["Image type"] == "CNES/Airbus":
+            row["Image type"] = "CNES Airbus"
+        if row["Image type"] == "Bung":
+            row["Image type"] = "Bing"
+    
+    # Climatic zone field filters
+    if "Climatic zone" in row:
+        if row["Climatic zone"] == "Dry Winter-Hot Summer (t)":
+            row["Climatic zone"] = "Temperate Dry Winter Hot summer"
+        if row["Climatic zone"] == "Dry Winter-Warm Summer (t)":
+            row["Climatic zone"] = "Temperate Dry Winter Warm summer"
+        if row["Climatic zone"] == "Cwb":
+            row["Climatic zone"] = "Temperate Dry Winter Warm summer"
+        if row["Climatic zone"] == "Cwa":
+            row["Climatic zone"] = "Temperate Dry Winter Hot summer"
+        if row["Climatic zone"] == "Bsh":
+            row["Climatic zone"] = "Steppe Hot"
+    
+    # Surveyor name field filters
+    if "Surveyor name" in row:
+        if row["Surveyor name"] == "Ed Burnett":
+            row["Surveyor name"] = "Ed Burnett, Edward Burnett"
+        if row["Surveyor name"] == "Renier van der Merwe":
+            row["Surveyor name"] = "Renier Hendrik van der Merwe"
+    
+    # Threat assessor name field filters
+    if "Threat assessor name" in row:
+        if row["Threat assessor name"] == "Ed Burnett":
+            row["Threat assessor name"] = "Ed Burnett, Edward Burnett"
+        if row["Threat assessor name"] == "Renier van der Merwe":
+            row["Threat assessor name"] = "Renier Hendrik van der Merwe"
+    
+    # Measurement unit field filters
+    if "Measurement unit" in row:
+        if row["Measurement unit"] == "m2":
+            row["Measurement unit"] = "square meter"
+        if row["Measurement unit"] == "Square Meter":
+            row["Measurement unit"] = "square meter"
+        if row["Measurement unit"] == "m":
+            row["Measurement unit"] = "Meter"
+        if row["Measurement unit"] == "meter":
+            row["Measurement unit"] = "Meter"
+        if row["Measurement unit"] == "Hectares":
+            row["Measurement unit"] = "Hectare"
+    
+    # Measurement type field filters
+    if "Measurement type" in row:
+        if row["Measurement type"] == "Perimiter":
+            row["Measurement type"] = "Area"
+    
+    # Additional information field filters
+    if "Additional information" in row:
+        if row["Additional information"] == "M":
+            row["Additional information"] = ""
+    
+    # Survey type field filters
+    if "Survey type" in row:
+        if row["Survey type"] == "Historic maps check":
+            row["Survey type"] = "Historic map check"
+        if row["Survey type"] == "Topographic":
+            row["Survey type"] = "Topographic other"
+    
+    # Threat type field filters
+    if "Threat type" in row:
+        if row["Threat type"] == "Conflict":
+            row["Threat type"] = "War"
+        if row["Threat type"] == "Occupation expansion":
+            row["Threat type"] = "Urbanisation"
+        if row["Threat type"] == "Environmental":
+            row["Threat type"] = "Episodic events"
+        if row["Threat type"] == "Environmental ":
+            row["Threat type"] = "Episodic events"
+        if row["Threat type"] == "Anthopogenic":
+            row["Threat type"] = "Agriculture"
+        if row["Threat type"] == "Anthropogenic":
+            row["Threat type"] = "Agriculture"
+        if row["Threat type"] == "Antrhopgenic":
+            row["Threat type"] = "Agriculture"
+        if row["Threat type"] == "Antrhopogenic":
+            row["Threat type"] = "Agriculture"
+        if row["Threat type"] == "Development":
+            row["Threat type"] = "Urbanisation"
+    
+    # Evidence shape field filters
+    if "Evidence shape" in row:
+        if row["Evidence shape"] == "Ring":
+            row["Evidence shape"] = "Circular"
+    
+    # Ground truthed field filters
+    if "Ground truthed" in row:
+        if row["Ground truthed"] == "#REF!":
+            row["Ground truthed"] = "No"
+    
+    # Land use land cover field filters
+    if "Land use land cover" in row:
+        if row["Land use land cover"] == "Built-up":
+            row["Land use land cover"] = "Built up"
+        if row["Land use land cover"] == "grassland":
+            row["Land use land cover"] = "Grassland"
+        if row["Land use land cover"] == "Cropland":
+            row["Land use land cover"] = "Cultivated"
+        if row["Land use land cover"] == "Tree Cover":
+            row["Land use land cover"] = "Thicket"
+        if row["Land use land cover"] == "Shurbland":
+            row["Land use land cover"] = "Scrub"
+        if row["Land use land cover"] == "Bare rock or Soil discoloration":
+            row["Land use land cover"] = "Bare rock or soil"
+        if row["Land use land cover"] == "Bare":
+            row["Land use land cover"] = "Bare rock or soil"
+    
     return row
 
 
@@ -214,58 +259,74 @@ def convert_date_format(date_str: str) -> str:
 
 
 def date_format_all_coloums(row: dict) -> dict:
-    row["Survey date"] = convert_date_format(row["Survey date"])
-    row["Date of imagery"] = convert_date_format(row["Date of imagery"])
-    row["Date of imagery"] = row["Date of imagery"].replace("20XX", row["Survey date"])
-    row["Date of imagery"] = row["Date of imagery"].replace(
-        "1900-01-00", row["Survey date"]
-    )
-    row["Threat assessment date"] = convert_date_format(row["Threat assessment date"])
-    row["Image used date"] = convert_date_format(row["Image used date"])
+    # Format date fields if they exist
+    if "Survey date" in row:
+        row["Survey date"] = convert_date_format(row["Survey date"])
+    
+    if "Date of imagery" in row:
+        row["Date of imagery"] = convert_date_format(row["Date of imagery"])
+        if "Survey date" in row:
+            row["Date of imagery"] = row["Date of imagery"].replace("20XX", row["Survey date"])
+            row["Date of imagery"] = row["Date of imagery"].replace(
+                "1900-01-00", row["Survey date"]
+            )
+    
+    if "Threat assessment date" in row:
+        row["Threat assessment date"] = convert_date_format(row["Threat assessment date"])
+    
+    if "Image used date" in row:
+        row["Image used date"] = convert_date_format(row["Image used date"])
+    
     return row
 
 
 def actor_uuid_format(row: dict, actor_uuid_dict) -> dict:
-    if row["Surveyor name"]:
-        row["Surveyor name"] = (
-            "[{'resourceId': '"
-            + actor_uuid_dict[row["Surveyor name"]]
-            + "','ontologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P11_had_participant', 'resourceXresourceId': '','inverseOntologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P140_assigned_attribute_to'}]"
-        )
-    if row["Threat assessor name"]:
-        row["Threat assessor name"] = (
-            "[{'resourceId': '"
-            + actor_uuid_dict[row["Threat assessor name"]]
-            + "','ontologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P11_had_participant', 'resourceXresourceId': '','inverseOntologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P140_assigned_attribute_to'}]"
-        )
-    if row["Assessor name"]:
-        row["Assessor name"] = (
-            "[{'resourceId': '"
-            + actor_uuid_dict[row["Assessor name"]]
-            + "','ontologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P11_had_participant', 'resourceXresourceId': '','inverseOntologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P140_assigned_attribute_to'}]"
-        )
+    # List of actor fields that need UUID formatting
+    actor_fields = [
+        "Surveyor name",
+        "Threat assessor name", 
+        "Assessor name",
+        "Site data information Reference Institution"
+    ]
+    
+    # Format actor fields with UUID relationships
+    for field in actor_fields:
+        if field in row and row[field] and row[field] in actor_uuid_dict:
+            row[field] = (
+                "[{'resourceId': '"
+                + actor_uuid_dict[row[field]]
+                + "','ontologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P11_had_participant', 'resourceXresourceId': '','inverseOntologyProperty': 'http://www.cidoc-crm.org/cidoc-crm/P140_assigned_attribute_to'}]"
+            )
+    
+    # Add new copyright/access nodes with default values
+    row["Access Level"] = "Public"
+    row["Copyright Information"] = "CC BY-NC-SA"
+    
     return row
 
 
 def clean_geomtry_based_on_type(row: dict) -> dict:
-    geometry = row["Geometry type"]
-    if geometry:
-        geometry_type = geometry.split(" ")[0]
-        if geometry_type == "POINT":
-            return row
-        if (
-            geometry_type == "POLYGON"
-        ):  # Add this to avoid the error but not sure if solved it
-            return row
-        if (
-            geometry_type == "LINESTRING"
-        ):  # Add this to avoid the error but not sure if solved it
-            return row
-        elif geometry_type == "MULTIPOLYGON":
-            row["Geometry type"] = remove_duplicate_points(geometry)
-            return row
+    if "Geometry type" in row:
+        geometry = row["Geometry type"]
+        if geometry:
+            geometry_type = geometry.split(" ")[0]
+            if geometry_type == "POINT":
+                return row
+            if (
+                geometry_type == "POLYGON"
+            ):  # Add this to avoid the error but not sure if solved it
+                return row
+            if (
+                geometry_type == "LINESTRING"
+            ):  # Add this to avoid the error but not sure if solved it
+                return row
+            elif geometry_type == "MULTIPOLYGON":
+                row["Geometry type"] = remove_duplicate_points(geometry)
+                return row
+            else:
+                print("Unknown geometry type: " + geometry_type)
         else:
-            print("Unknown geometry type: " + geometry_type)
+            return row
     else:
         return row
 
