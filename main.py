@@ -24,6 +24,7 @@ import pathlib
 from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon, Point
 from data_filter import data_filter
+import argparse
 
 # find the path of the script
 script_path = pathlib.Path(__file__).parent.absolute()
@@ -38,27 +39,28 @@ class CSV_cleaning_script:
     def __init__(self):
         pass
 
-    def read_input_csv(self) -> pd.DataFrame:
+    def read_input_csv(self, input_csv_file, output_csv_file, actor_csv_file):
         with open(input_csv_file, "r") as input_csv_file_object:
             input_csv_file_object_reader = csv.DictReader(input_csv_file_object)
-            write_output_csv(input_csv_file_object_reader)
+            write_output_csv(
+                input_csv_file_object_reader, output_csv_file, actor_csv_file
+            )
             # return input_csv_file_object_reader
 
 
-def read_input_csv() -> csv.DictReader:
+def read_input_csv(input_csv_file, output_csv_file, actor_csv_file):
     with open(input_csv_file, "r") as input_csv_file_object:
         input_csv_file_object_reader = csv.DictReader(input_csv_file_object)
-        write_output_csv(input_csv_file_object_reader)
+        write_output_csv(input_csv_file_object_reader, output_csv_file, actor_csv_file)
         # return input_csv_file_object_reader
 
 
-def read_actor_uuid_csv() -> dict:
+def read_actor_uuid_csv(actor_csv_file) -> dict:
     actor_uuid_dict = {}
     with open(actor_csv_file, "r") as actor_uuid_file_object:
         actor_uuid_file_object_reader = csv.DictReader(actor_uuid_file_object)
         for uuid_row in actor_uuid_file_object_reader:
             actor_uuid_dict[uuid_row["Name value"]] = uuid_row["resourceid"]
-
     return actor_uuid_dict
 
 
@@ -66,10 +68,12 @@ def check_for_resource_id_column(file_reader: csv.DictReader) -> bool:
     return "ResourceID" in file_reader.fieldnames
 
 
-def write_output_csv(file_reader: csv.DictReader) -> None:
+def write_output_csv(
+    file_reader: csv.DictReader, output_csv_file, actor_csv_file
+) -> None:
     with open(output_csv_file, "w") as zim_data_overwritten:
         # read actor uuid csv
-        actor_uuid_dict = read_actor_uuid_csv()
+        actor_uuid_dict = read_actor_uuid_csv(actor_csv_file)
 
         fieldnames = list(file_reader.fieldnames)
         missing_resource_id = check_for_resource_id_column(file_reader)
@@ -225,5 +229,46 @@ def remove_duplicate_points(geometry_wkt: str) -> str:
         return geometry
 
 
+def get_arg_parser():
+    parser = argparse.ArgumentParser(
+        description="Clean and process CSV files for Arches upload."
+    )
+    parser.add_argument(
+        "--resource-model",
+        type=str,
+        required=True,
+        help="Path to the resource model JSON file",
+    )
+    parser.add_argument(
+        "--concept", type=str, required=True, help="Path to the concept JSON file"
+    )
+    parser.add_argument(
+        "--data", type=str, required=True, help="Path to the data CSV file"
+    )
+    parser.add_argument(
+        "--output-cleaned",
+        type=str,
+        required=True,
+        help="Path to the output cleaned data CSV file",
+    )
+    parser.add_argument(
+        "--output-report",
+        type=str,
+        required=True,
+        help="Path to the output quality report file",
+    )
+    return parser
+
+
 if __name__ == "__main__":
-    read_input_csv()
+    parser = get_arg_parser()
+    args = parser.parse_args()
+    # Use provided arguments
+    resource_model_file = args.resource_model
+    concept_json_file = args.concept
+    data_csv_file = args.data
+    output_cleaned_file = args.output_cleaned
+    output_report_file = args.output_report
+    # TODO: Use resource_model_file and concept_json_file in the cleaning logic
+    read_input_csv(data_csv_file, output_cleaned_file, concept_json_file)
+    # TODO: Generate quality report and write to output_report_file
