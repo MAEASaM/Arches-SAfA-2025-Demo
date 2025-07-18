@@ -1,0 +1,81 @@
+{
+  "Evidence": {
+    "Building": "Structure",
+    "Structures": "Structure",
+    "Unknown": "Standing remains",
+    "Enclosures": "Enclosure",
+    "Terracing": "Terrace",
+    "Wall": "Walling",
+    "Stone Mound": "Stone mound",
+    "Soil Mark": "Soil mark",
+    "Complex Enclosure": "Complex enclosure",
+    "Complex enclosures": "Complex enclosure",
+    "Stone Circle": "Stone circle",
+    "Complex Structure": "Complex structure",
+    "Earth": "Terrace",
+    "Soil discoloration": "Discolouration"
+  },
+  "Image type": {
+    "CNES / Airbus": "CNES Airbus",
+    "CNES/Airbus": "CNES Airbus",
+    "Bung": "Bing"
+  },
+  "Climatic zone": {
+    "Dry Winter-Hot Summer (t)": "Temperate Dry Winter Hot summer",
+    "Dry Winter-Warm Summer (t)": "Temperate Dry Winter Warm summer",
+    "Cwb": "Temperate Dry Winter Warm summer",
+    "Cwa": "Temperate Dry Winter Hot summer",
+    "Bsh": "Steppe Hot"
+  },
+  "Surveyor name": {
+    "Ed Burnett": "Ed Burnett, Edward Burnett",
+    "Renier van der Merwe": "Renier Hendrik van der Merwe"
+  },
+  "Threat assessor name": {
+    "Ed Burnett": "Ed Burnett, Edward Burnett",
+    "Renier van der Merwe": "Renier Hendrik van der Merwe"
+  },
+  "Measurement unit": {
+    "m2": "square meter",
+    "Square Meter": "square meter",
+    "m": "Meter",
+    "meter": "Meter",
+    "Hectares": "Hectare"
+  },
+  "Measurement type": {
+    "Perimiter": "Area"
+  },
+  "Additional information": {
+    "M": ""
+  },
+  "Survey type": {
+    "Historic maps check": "Historic map check",
+    "Topographic": "Topographic other"
+  },
+  "Threat type": {
+    "Conflict": "War",
+    "Occupation expansion": "Urbanisation",
+    "Environmental": "Episodic events",
+    "Environmental ": "Episodic events",
+    "Anthopogenic": "Agriculture",
+    "Anthropogenic": "Agriculture",
+    "Antrhopgenic": "Agriculture",
+    "Antrhopogenic": "Agriculture",
+    "Development": "Urbanisation"
+  },
+  "Evidence shape": {
+    "Ring": "Circular"
+  },
+  "Ground truthed": {
+    "#REF!": "No"
+  },
+  "Land use land cover": {
+    "Built-up": "Built up",
+    "grassland": "Grassland",
+    "Cropland": "Cultivated",
+    "Tree Cover": "Thicket",
+    "Shurbland": "Scrub",
+    "Bare rock or Soil discoloration": "Bare rock or soil",
+    "Bare": "Bare rock or soil"
+  }
+}
