@@ -240,7 +240,7 @@ def get_arg_parser():
         help="Path to the resource model JSON file",
     )
     parser.add_argument(
-        "--concept", type=str, required=True, help="Path to the concept file"
+        "--concept", type=str, required=True, help="Path to the concept JSON file"
     )
     parser.add_argument(
         "--data", type=str, required=True, help="Path to the data CSV file"
@@ -265,10 +265,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # Use provided arguments
     resource_model_file = args.resource_model
-    concept_file = args.concept
+    concept_json_file = args.concept
     data_csv_file = args.data
     output_cleaned_file = args.output_cleaned
     output_report_file = args.output_report
-    # TODO: Use resource_model_file and concept_file in the cleaning logic
-    read_input_csv(data_csv_file, output_cleaned_file, concept_file)
+    # TODO: Use resource_model_file and concept_json_file in the cleaning logic
+    read_input_csv(data_csv_file, output_cleaned_file, concept_json_file)
     # TODO: Generate quality report and write to output_report_file
