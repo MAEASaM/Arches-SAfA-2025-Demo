@@ -25,6 +25,7 @@ from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon, Point
 from data_filter import data_filter
 import argparse
+from geo_duplicate import geo_duplicate
 
 # find the path of the script
 script_path = pathlib.Path(__file__).parent.absolute()
@@ -269,6 +270,12 @@ if __name__ == "__main__":
     data_csv_file = args.data
     output_cleaned_file = args.output_cleaned
     output_report_file = args.output_report
-    # TODO: Use resource_model_file and concept_json_file in the cleaning logic
+
+    # Process the data CSV with initial cleaning
     read_input_csv(data_csv_file, output_cleaned_file, concept_json_file)
+
+    # Apply geo_duplicate processing to handle geojson-feature-collection duplicates
+    print("Applying geo_duplicate processing...")
+    geo_duplicate(output_cleaned_file, output_cleaned_file, resource_model_file)
+
     # TODO: Generate quality report and write to output_report_file
